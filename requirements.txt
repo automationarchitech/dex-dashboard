@@ -3,3 +3,5 @@ pandas
 streamlit
 matplotlib
 plotly
+seaborn
+mplcursors
