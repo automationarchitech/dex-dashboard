@@ -73,12 +73,13 @@ if raw_data:
     top_volume_changes = get_top_changes(df, 'price_change_percentage_h1')
 
     # Display the top 3 price changes
-    st.subheader('Top 3 Pairs by 1-Hour Price Change')
-    for index, row in top_volume_changes.iterrows():
-        st.metric(label=row['name'], value=f"{row['price_change_percentage_h1']:.2f}%")
-        # Assuming transactions data is in the format {'h1': {'buys': x, 'sells': y}}
-        st.text(f"Buys in last hour: {row['transactions_h1_buys']}")
-        st.text(f"Sells in last hour: {row['transactions_h1_sells']}")
+    st.subheader('⭐️ Top 3 Pairs by 1-Hour Price Change')
+    columns = st.columns(3)  # Create three columns for the top 3 changes
+    for index, (col, row) in enumerate(zip(columns, top_volume_changes.iterrows())):
+        with col:
+            st.metric(label=row[1]['name'], value=f"{row[1]['price_change_percentage_h1']:.2f}%")
+            st.text(f"Buys in last hour: {row[1]['transactions_h1_buys']}")
+            st.text(f"Sells in last hour: {row[1]['transactions_h1_sells']}")
 
 
     # Create two columns for the data table and the bar chart
@@ -86,14 +87,15 @@ if raw_data:
 
     with col1:
         # Display data table in the first column
-        st.write("Data Overview", df)
+        st.subheader('🏓 Data Overview')
+        st.write("", df)
 
     # # Toggle for log scale
     # log_scale = st.checkbox('Use logarithmic scale for Price Change Percentage')
 
     with col2:
         # Visualization: Bar Chart for Price Change Percentage in the second column
-        st.subheader("Price Change Percentage (24h)")
+        st.subheader("📊 Price Change Percentage (24h)")
         if 'price_change_percentage_h1' in df.columns:
             fig_price_change = plot_price_change(df)
             st.pyplot(fig_price_change)
