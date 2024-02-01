@@ -19,7 +19,9 @@ def parse_crypto_pools(json_payload):
             'volume_usd_h1': pool['attributes']['volume_usd']['h1'],
             'volume_usd_h24': pool['attributes']['volume_usd']['h24'],
             'price_change_percentage_h1': json.loads(pool['attributes']['price_change_percentage']['h1']),
-            'price_change_percentage_h24': json.loads(pool['attributes']['price_change_percentage']['h24'])
+            'price_change_percentage_h24': json.loads(pool['attributes']['price_change_percentage']['h24']),
+            'transactions_h1_buys': pool['attributes']['transactions']['h1']['buys'],
+            'transactions_h1_sells': pool['attributes']['transactions']['h1']['sells'],
         }
         parsed_pools.append(pool_info)
 

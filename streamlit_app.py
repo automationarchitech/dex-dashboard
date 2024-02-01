@@ -29,12 +29,13 @@ def process_data(data):
     return pd.DataFrame([pool['attributes'] for pool in data['data']])
 
 # Function to get top 3 pairs with the greatest 1-hour volume change
-def get_top_volume_changes(df, column_name='price_change_percentage_h1'):
+def get_top_changes(df, column_name='price_change_percentage_h1'):
     # Ensure the column is of type float
     df[column_name] = df[column_name].astype(float)
     # Sort the DataFrame based on the volume change column
     top_changes = df.sort_values(by=column_name, ascending=False).head(3)
-    return top_changes[['name', column_name]]
+    # Include the 'transactions' column in the returned DataFrame
+    return top_changes[['name', column_name, 'transactions_h1_sells', 'transactions_h1_buys']]
 
 # Function to create a pie chart for transaction types
 def plot_transaction_types(df):
@@ -69,12 +70,15 @@ raw_data = fetch_data(API_URL, HEADERS)
 if raw_data:
     df = pd.DataFrame(parse_crypto_pools(raw_data))
 
-    top_volume_changes = get_top_volume_changes(df)
+    top_volume_changes = get_top_changes(df, 'price_change_percentage_h1')
 
-    # Display the top 3 volume changes
-    st.subheader('Top 3 Pairs by 1-Hour Volume Change')
+    # Display the top 3 price changes
+    st.subheader('Top 3 Pairs by 1-Hour Price Change')
     for index, row in top_volume_changes.iterrows():
         st.metric(label=row['name'], value=f"{row['price_change_percentage_h1']:.2f}%")
+        # Assuming transactions data is in the format {'h1': {'buys': x, 'sells': y}}
+        st.text(f"Buys in last hour: {row['transactions_h1_buys']}")
+        st.text(f"Sells in last hour: {row['transactions_h1_sells']}")
 
 
     # Create two columns for the data table and the bar chart
