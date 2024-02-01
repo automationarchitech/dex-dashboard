@@ -27,7 +27,3 @@ def parse_crypto_pools(json_payload):
 
     return parsed_pools
 
-# Example Usage
-# json_payload = <your JSON string here>
-# pools = parse_crypto_pools(json_payload)
-# print(pools)
