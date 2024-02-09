@@ -56,10 +56,7 @@ def plot_price_change(df, log_scale=False):
     ax.set(xlabel='Price Change Percentage (24h)', title='Price Change Percentage (24h) by Pool')
     if log_scale:
         ax.set_xscale('log')
-    # Add tooltips using mplcursors
-    import mplcursors
-    mplcursors.cursor(hover=True)
-    plt.tight_layout()
+
     return fig
 
 # Main app code
@@ -89,9 +86,6 @@ if raw_data:
         # Display data table in the first column
         st.subheader('🏓 Data Overview')
         st.write("", df)
-
-    # # Toggle for log scale
-    # log_scale = st.checkbox('Use logarithmic scale for Price Change Percentage')
 
     with col2:
         # Visualization: Bar Chart for Price Change Percentage in the second column
