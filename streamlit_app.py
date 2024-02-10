@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns  # Add this line to import seaborn
+import streamlit_shadcn_ui as ui
 
 from utils import parse_crypto_pools
 
@@ -88,6 +89,8 @@ def plot_price_change(df, log_scale=False):
 
 def page_one():
     st.title('Cryptocurrency Pool Data Viewer - Page 1')
+    trigger_btn = ui.button(text="Trigger Button", key="trigger_btn")
+    ui.alert_dialog(show=trigger_btn, title="Alert Dialog", description="This is an alert dialog", confirm_label="OK", cancel_label="Cancel", key="alert_dialog1")
     # Main app code
     st.title('Cryptocurrency Pool Data Viewer')
 
@@ -132,24 +135,33 @@ def page_two():
         token_data = token_data['data']
     
     # Display each token in a separate card
-    for token in token_data:
+    for index, token in enumerate(token_data):
         attributes = token['attributes']
-        with st.container():
+        # Generate a unique key for each card, using 'id' if available, or index as a fallback
+        card_key = f"card_{attributes.get('id', f'fallback_{index}')}"
+        with ui.card(key=card_key):
             # Check if the image URL is valid
             image_url = attributes['image_url']
+            ui.element("h4", className="text-md font-semibold", children=["GT Score"])
+            ui.element("p", children=[str(attributes['gt_score'])])
+            # print("Image URL:", image_url, "Status Code:", requests.head(image_url).status_code)
             if image_url and requests.head(image_url).status_code == 200:
-                st.image(image_url, width=200)
+                ui.element("img", src=image_url, className="w-48 h-48")  # Adjust the width and height as needed
             else:
                 # Display a placeholder image if the image URL is not valid
                 placeholder_image_url = "https://via.placeholder.com/200x200.png?text=Crypto+Icon"
-                st.image(placeholder_image_url, width=200)
+                ui.element("img", src=placeholder_image_url, className="w-20 h-20")  # Adjust the width and height as needed
             
+            ui.element("h3", className="text-lg font-bold", children=[attributes['name']])
+            ui.element("p", children=[attributes['description']])
             
-            st.write('Websites:')
-            for website in attributes['websites']:
-                st.write(f"- [{website}]({website})")
-            st.metric(label='GT Score', value=attributes['gt_score'])
-            st.write(attributes['description'])
+            # Display websites as links
+            with ui.element("div", className="flex flex-wrap gap-2"):
+                for website in attributes['websites']:
+                    ui.link_button(url=website, text=website, key=f"link_{website}")
+            
+            ui.element("metric", label='GT Score', value=attributes['gt_score'])
+
 
 # Sidebar navigation
 st.sidebar.title('Navigation')
