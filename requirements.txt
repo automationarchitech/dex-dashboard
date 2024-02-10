@@ -4,4 +4,4 @@ streamlit
 matplotlib
 plotly
 seaborn
-mplcursors
+streamlit-shadcn-ui
