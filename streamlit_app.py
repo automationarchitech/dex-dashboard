@@ -7,36 +7,53 @@ import seaborn as sns  # Add this line to import seaborn
 
 from utils import parse_crypto_pools
 
-# Constantss
-API_URL = 'https://api.geckoterminal.com/api/v2/networks/new_pools?page=1'
+# Constants
+API_BASE_URL = 'https://api.geckoterminal.com/api/v2'
+NEW_POOLS_ENDPOINT = '/networks/new_pools?page=1'
+TOKENS_ENDPOINT = '/tokens/info_recently_updated'
 HEADERS = {'accept': 'application/json'}
+PLACEHOLDER_IMAGE_URL = "https://via.placeholder.com/200x200.png?text=Crypto+Icon"
+
 
 # Set the page to wide mode
 st.set_page_config(layout="wide")
 
 # Function to fetch recently updated token data
-@st.cache
-def fetch_token_data():
-    response = requests.get('https://api.geckoterminal.com/api/v2/tokens/info_recently_updated')
-    if response.status_code == 200:
-        return response.json()['data']
-    else:
-        st.error(f'Failed to retrieve token data. Status code: {response.status_code}')
-        return []
+# @st.cache
+# def fetch_token_data():
+#     response = requests.get('https://api.geckoterminal.com/api/v2/tokens/info_recently_updated')
+#     if response.status_code == 200:
+#         return response.json()['data']
+#     else:
+#         st.error(f'Failed to retrieve token data. Status code: {response.status_code}')
+#         return []
 
 # Function to fetch data from the API
 @st.cache_data
-def fetch_data(url, headers):
-    response = requests.get(url, headers=headers)
+def fetch_data(endpoint):
+    url = f"{API_BASE_URL}{endpoint}"
+    response = requests.get(url, headers=HEADERS)
     if response.status_code == 200:
         return response.json()
     else:
-        st.error(f'Failed to retrieve data. Status code: {response.status_code}')
+        st.error(f'Failed to retrieve data from {url}. Status code: {response.status_code}')
         return None
 
 # Function to process the JSON data into a DataFrame
 def process_data(data):
-    return pd.DataFrame([pool['attributes'] for pool in data['data']])
+    def flatten(d, parent_key='', sep='_'):
+        items = []
+        for k, v in d.items():
+            new_key = f"{parent_key}{sep}{k}" if parent_key else k
+            if isinstance(v, dict):
+                items.extend(flatten(v, new_key, sep=sep).items())
+            else:
+                items.append((new_key, v))
+        return dict(items)
+
+    # Flatten each pool's attributes and create a DataFrame
+    flat_data = [flatten(pool['attributes']) for pool in data['data']]
+    return pd.DataFrame(flat_data)
 
 # Function to get top 3 pairs with the greatest 1-hour volume change
 def get_top_changes(df, column_name='price_change_percentage_h1'):
@@ -75,9 +92,9 @@ def page_one():
     st.title('Cryptocurrency Pool Data Viewer')
 
     # Fetch and process data
-    raw_data = fetch_data(API_URL, HEADERS)
+    raw_data = fetch_data(NEW_POOLS_ENDPOINT)
     if raw_data:
-        df = pd.DataFrame(parse_crypto_pools(raw_data))
+        df = process_data(raw_data)
 
         top_volume_changes = get_top_changes(df, 'price_change_percentage_h1')
 
@@ -110,7 +127,9 @@ def page_two():
     st.title('Cryptocurrency Token Data Viewer - Page 2')
     
     # Fetch token data
-    token_data = fetch_token_data()
+    token_data = fetch_data(TOKENS_ENDPOINT)
+    if token_data:
+        token_data = token_data['data']
     
     # Display each token in a separate card
     for token in token_data:
