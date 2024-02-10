@@ -14,6 +14,16 @@ HEADERS = {'accept': 'application/json'}
 # Set the page to wide mode
 st.set_page_config(layout="wide")
 
+# Function to fetch recently updated token data
+@st.cache
+def fetch_token_data():
+    response = requests.get('https://api.geckoterminal.com/api/v2/tokens/info_recently_updated')
+    if response.status_code == 200:
+        return response.json()['data']
+    else:
+        st.error(f'Failed to retrieve token data. Status code: {response.status_code}')
+        return []
+
 # Function to fetch data from the API
 @st.cache_data
 def fetch_data(url, headers):
@@ -59,37 +69,74 @@ def plot_price_change(df, log_scale=False):
 
     return fig
 
-# Main app code
-st.title('Cryptocurrency Pool Data Viewer')
+def page_one():
+    st.title('Cryptocurrency Pool Data Viewer - Page 1')
+    # Main app code
+    st.title('Cryptocurrency Pool Data Viewer')
 
-# Fetch and process data
-raw_data = fetch_data(API_URL, HEADERS)
-if raw_data:
-    df = pd.DataFrame(parse_crypto_pools(raw_data))
+    # Fetch and process data
+    raw_data = fetch_data(API_URL, HEADERS)
+    if raw_data:
+        df = pd.DataFrame(parse_crypto_pools(raw_data))
 
-    top_volume_changes = get_top_changes(df, 'price_change_percentage_h1')
+        top_volume_changes = get_top_changes(df, 'price_change_percentage_h1')
 
-    # Display the top 3 price changes
-    st.subheader('⭐️ Top 3 Pairs by 1-Hour Price Change')
-    columns = st.columns(3)  # Create three columns for the top 3 changes
-    for index, (col, row) in enumerate(zip(columns, top_volume_changes.iterrows())):
-        with col:
-            st.metric(label=row[1]['name'], value=f"{row[1]['price_change_percentage_h1']:.2f}%")
-            st.text(f"Buys in last hour: {row[1]['transactions_h1_buys']}")
-            st.text(f"Sells in last hour: {row[1]['transactions_h1_sells']}")
+        # Display the top 3 price changes
+        st.subheader('⭐️ Top 3 Pairs by 1-Hour Price Change')
+        columns = st.columns(3)  # Create three columns for the top 3 changes
+        for index, (col, row) in enumerate(zip(columns, top_volume_changes.iterrows())):
+            with col:
+                st.metric(label=row[1]['name'], value=f"{row[1]['price_change_percentage_h1']:.2f}%")
+                st.text(f"Buys in last hour: {row[1]['transactions_h1_buys']}")
+                st.text(f"Sells in last hour: {row[1]['transactions_h1_sells']}")
 
 
-    # Create two columns for the data table and the bar chart
-    col1, col2 = st.columns(2)
+        # Create two columns for the data table and the bar chart
+        col1, col2 = st.columns(2)
 
-    with col1:
-        # Display data table in the first column
-        st.subheader('🏓 Data Overview')
-        st.write("", df)
+        with col1:
+            # Display data table in the first column
+            st.subheader('🏓 Data Overview')
+            st.write("", df)
 
-    with col2:
-        # Visualization: Bar Chart for Price Change Percentage in the second column
-        st.subheader("📊 Price Change Percentage (24h)")
-        if 'price_change_percentage_h1' in df.columns:
-            fig_price_change = plot_price_change(df)
-            st.pyplot(fig_price_change)
+        with col2:
+            # Visualization: Bar Chart for Price Change Percentage in the second column
+            st.subheader("📊 Price Change Percentage (24h)")
+            if 'price_change_percentage_h1' in df.columns:
+                fig_price_change = plot_price_change(df)
+                st.pyplot(fig_price_change)
+
+def page_two():
+    st.title('Cryptocurrency Token Data Viewer - Page 2')
+    
+    # Fetch token data
+    token_data = fetch_token_data()
+    
+    # Display each token in a separate card
+    for token in token_data:
+        attributes = token['attributes']
+        with st.container():
+            # Check if the image URL is valid
+            image_url = attributes['image_url']
+            if image_url and requests.head(image_url).status_code == 200:
+                st.image(image_url, width=200)
+            else:
+                # Display a placeholder image if the image URL is not valid
+                placeholder_image_url = "https://via.placeholder.com/200x200.png?text=Crypto+Icon"
+                st.image(placeholder_image_url, width=200)
+            
+            
+            st.write('Websites:')
+            for website in attributes['websites']:
+                st.write(f"- [{website}]({website})")
+            st.metric(label='GT Score', value=attributes['gt_score'])
+            st.write(attributes['description'])
+
+# Sidebar navigation
+st.sidebar.title('Navigation')
+page = st.sidebar.radio('Select a page:', ['Page 1', 'Page 2'])
+
+if page == 'Page 1':
+    page_one()
+elif page == 'Page 2':
+    page_two()
