@@ -9,7 +9,7 @@ import streamlit_shadcn_ui as ui
 from utils import parse_crypto_pools
 
 # Constants
-API_BASE_URL = 'https://api.geckoterminal.com/api/v2'
+API_BASE_URL = ' https://pro-api.coingecko.com/api/v3/onchain'
 NEW_POOLS_ENDPOINT = '/networks/new_pools?page=1'
 TOKENS_ENDPOINT = '/tokens/info_recently_updated'
 HEADERS = {'accept': 'application/json'}
@@ -158,9 +158,8 @@ def page_two():
             # Display websites as links
             with ui.element("div", className="flex flex-wrap gap-2"):
                 for website in attributes['websites']:
-                    ui.link_button(url=website, text=website, key=f"link_{website}")
+                    ui.element("p", url=website, text=website, key=f"link_{website}")
             
-            ui.element("metric", label='GT Score', value=attributes['gt_score'])
 
 
 # Sidebar navigation
