@@ -109,3 +109,9 @@ def parse_crypto_pools(json_payload):
 
     return parsed_pools
 
+def plot_ohlcv(df):
+    # Ensure the DataFrame is sorted by timestamp in ascending order
+    df_sorted = df.sort_values('timestamp').set_index('timestamp')
+    mpf.plot(df_sorted, type='candle', style='charles',
+             title='OHLCV Chart', ylabel='Price', ylabel_lower='Volume',
+             volume=True, figratio=(16, 8), show_nontrading=False)

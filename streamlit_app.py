@@ -6,28 +6,45 @@ import matplotlib.pyplot as plt
 import seaborn as sns  # Add this line to import seaborn
 import streamlit_shadcn_ui as ui
 
-from utils import parse_crypto_pools
+from utils import parse_crypto_pools, parse_ohlcv_data, plot_ohlcv
 
-# Constants
-API_BASE_URL = ' https://pro-api.coingecko.com/api/v3/onchain'
-NEW_POOLS_ENDPOINT = '/networks/new_pools?page=1'
-TOKENS_ENDPOINT = '/tokens/info_recently_updated'
-HEADERS = {'accept': 'application/json'}
+# Constantss
+API_BASE_URL = "https://pro-api.coingecko.com/api/v3/onchain"
+NEW_POOLS_ENDPOINT = "/networks/new_pools?page=1"
+TOKENS_ENDPOINT = "/tokens/info_recently_updated"
+HEADERS = {"accept": "application/json", "x-cg-pro-api-key": "API_KEY"}
 PLACEHOLDER_IMAGE_URL = "https://via.placeholder.com/200x200.png?text=Crypto+Icon"
-
+st.set_option('deprecation.showPyplotGlobalUse', False)
 
 # Set the page to wide mode
 st.set_page_config(layout="wide")
 
-# Function to fetch recently updated token data
-# @st.cache
-# def fetch_token_data():
-#     response = requests.get('https://api.geckoterminal.com/api/v2/tokens/info_recently_updated')
-#     if response.status_code == 200:
-#         return response.json()['data']
-#     else:
-#         st.error(f'Failed to retrieve token data. Status code: {response.status_code}')
-#         return []
+
+@st.cache_data
+def fetch_networks_data():
+    url = "https://pro-api.coingecko.com/api/v3/onchain/networks?page=1"
+    response = requests.get(url, headers=HEADERS)
+    if response.status_code == 200:
+        networks = response.json()["data"]
+        return {network["attributes"]["name"]: network["id"] for network in networks}
+    else:
+        st.error(
+            f"Failed to retrieve networks data. Status code: {response.status_code}"
+        )
+        return {}
+
+
+# Modify the fetch_ohlcv_data function to accept an interval parameter
+@st.cache_data
+def fetch_ohlcv_data(network_id, pool_id, interval="hour"):
+    url = f"https://pro-api.coingecko.com/api/v3/onchain/networks/{network_id}/pools/{pool_id}/ohlcv/{interval}"
+    response = requests.get(url, headers=HEADERS)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        st.error(f"Failed to retrieve OHLCV data. Status code: {response.status_code}")
+        return []
+
 
 # Function to fetch data from the API
 @st.cache_data
@@ -126,40 +143,65 @@ def page_one():
                 fig_price_change = plot_price_change(df)
                 st.pyplot(fig_price_change)
 
+
 def page_two():
-    st.title('Cryptocurrency Token Data Viewer - Page 2')
-    
-    # Fetch token data
-    token_data = fetch_data(TOKENS_ENDPOINT)
-    if token_data:
-        token_data = token_data['data']
-    
-    # Display each token in a separate card
-    for index, token in enumerate(token_data):
-        attributes = token['attributes']
-        # Generate a unique key for each card, using 'id' if available, or index as a fallback
-        card_key = f"card_{attributes.get('id', f'fallback_{index}')}"
-        with ui.card(key=card_key):
-            # Check if the image URL is valid
-            image_url = attributes['image_url']
-            ui.element("h4", className="text-md font-semibold", children=["GT Score"])
-            ui.element("p", children=[str(attributes['gt_score'])])
-            # print("Image URL:", image_url, "Status Code:", requests.head(image_url).status_code)
-            if image_url and requests.head(image_url).status_code == 200:
-                ui.element("img", src=image_url, className="w-48 h-48")  # Adjust the width and height as needed
-            else:
-                # Display a placeholder image if the image URL is not valid
-                placeholder_image_url = "https://via.placeholder.com/200x200.png?text=Crypto+Icon"
-                ui.element("img", src=placeholder_image_url, className="w-20 h-20")  # Adjust the width and height as needed
-            
-            ui.element("h3", className="text-lg font-bold", children=[attributes['name']])
-            ui.element("p", children=[attributes['description']])
-            
-            # Display websites as links
-            with ui.element("div", className="flex flex-wrap gap-2"):
-                for website in attributes['websites']:
-                    ui.element("p", url=website, text=website, key=f"link_{website}")
-            
+    st.title("Crypto Liquidity Pool - OHLCV Chart")
+
+    # Fetch networks data and populate the dropdown
+    networks_data = fetch_networks_data()
+    selected_network = st.selectbox("Select a network:", list(networks_data.keys()))
+
+    # Use the selected network's ID for downstream tasks
+    network_id = networks_data[selected_network]
+    st.write(f"You have selected the network with ID: {network_id}")
+
+    # Fetch pools data for the selected network
+    pools_data = fetch_data(f"/networks/{network_id}/pools?page=1")
+    if pools_data:
+
+        print(pools_data)
+        # Extract pool names and IDs, and use only the part after the underscore for the ID
+        try:
+            pool_options = {
+                pool["attributes"]["name"]: pool["id"].split("_")[-1]
+                for pool in pools_data["data"]
+            }
+
+        except:
+            pool_options = {
+                pool["attributes"]["name"]: pool["id"].split("_")[0]
+                for pool in pools_data["data"]
+            }
+
+        print(pool_options)
+
+        # Create two columns for the pool and interval dropdowns
+        col_pool, col_interval = st.columns([3, 1])
+
+        with col_pool:
+            # Create a dropdown for pool names
+            selected_pool_name = st.selectbox(
+                "Select a pool:", list(pool_options.keys())
+            )
+
+        with col_interval:
+            # Create a dropdown for OHLCV interval selection
+            ohlcv_interval = st.selectbox(
+                "Select interval:", ["day", "hour", "minute"], index=1
+            )
+
+        # Get the selected pool ID using the selected pool name
+        selected_pool_id = pool_options[selected_pool_name]
+
+        # Fetch and parse the OHLCV data using the selected pool ID and interval
+        ohlcv_response = fetch_ohlcv_data(network_id, selected_pool_id, ohlcv_interval)
+        if ohlcv_response:
+            df_ohlcv, metadata = parse_ohlcv_data(ohlcv_response)
+            # Use metadata as needed, for example:
+            st.write("Base Token:", metadata["base"]["name"])
+            st.write("Quote Token:", metadata["quote"]["name"])
+            fig = plot_ohlcv(df_ohlcv)
+            st.pyplot(fig)
 
 
 # Sidebar navigation
@@ -168,5 +210,5 @@ page = st.sidebar.radio('Select a page:', ['Page 1', 'Page 2'])
 
 if page == 'Page 1':
     page_one()
-elif page == 'Page 2':
+elif page == "Page 2":
     page_two()
