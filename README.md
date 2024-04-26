@@ -22,9 +22,7 @@ Using a linux system,
 
 ## Run the code
 
-````shell
-streamlit run streamlit_app.py
-```
+`streamlit run streamlit_app.py`
 
 # Reference
 
@@ -35,4 +33,7 @@ streamlit run streamlit_app.py
 ## Page 2 Tutorial:
 
 [Create an Interactive OHLCV Candlestick Chart with Python (via Streamlit)](https://www.coingecko.com/learn/ohlcv-candlestick-chart-python-streamlit)
-````
+
+```
+
+```
