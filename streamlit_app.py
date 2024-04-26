@@ -1,18 +1,14 @@
 import requests
 import streamlit as st
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns  # Add this line to import seaborn
 import streamlit_shadcn_ui as ui
 
-from utils import parse_crypto_pools, parse_ohlcv_data, plot_ohlcv, plot_price_change, plot_transaction_types, get_top_changes, process_data
+from utils import parse_ohlcv_data, plot_ohlcv, plot_price_change, plot_transaction_types, get_top_changes, process_data
 
 # Constantss
 API_BASE_URL = "https://pro-api.coingecko.com/api/v3/onchain"
 NEW_POOLS_ENDPOINT = "/networks/new_pools?page=1"
 TOKENS_ENDPOINT = "/tokens/info_recently_updated"
-HEADERS = {"accept": "application/json", "x-cg-pro-api-key": "CG-oADuicFNcRiHgwztdfeMS87K"}
+HEADERS = {"accept": "application/json", "x-cg-pro-api-key": "APIKEY"}
 PLACEHOLDER_IMAGE_URL = "https://via.placeholder.com/200x200.png?text=Crypto+Icon"
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
