@@ -18,9 +18,11 @@ Using a linux system,
 
 `python -m venv venv`
 
-`source venv/scripts/activate
+`source venv/bin/activate`
 
-```shell
+## Run the code
+
+````shell
 streamlit run streamlit_app.py
 ```
 
@@ -33,3 +35,4 @@ streamlit run streamlit_app.py
 ## Page 2 Tutorial:
 
 [Create an Interactive OHLCV Candlestick Chart with Python (via Streamlit)](https://www.coingecko.com/learn/ohlcv-candlestick-chart-python-streamlit)
+````
