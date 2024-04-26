@@ -1,10 +1,7 @@
 import json
-import streamlit as st
 import pandas as pd
-import requests
 import mplfinance as mpf
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns  # Add this line to import seaborn
 
